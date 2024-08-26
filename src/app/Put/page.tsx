@@ -1,21 +1,37 @@
-"use client"
+"use client";
 import { FormEvent, useEffect, useState } from "react";
 import { Navbar } from "../Navbar";
 import axios from "axios";
-import router, { useRouter } from "next/navigation";
+import router,{ useRouter, useSearchParams } from "next/navigation";
 
-export default function Put() {
-  const [name,setName] = useState("")
-  const [ingredients,setIngredients] = useState("")
-  const [directions,setDirections] = useState("")
-  const [redirect, setRedirect] = useState(false)
+export default function Put({
+  searchParams,
+}: {
+  searchParams: { r: string | undefined; };
+}) {
+  const [name, setName] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [directions, setDirections] = useState("");
+  const [redirect, setRedirect] = useState(false);
   const router = useRouter();
 
   useEffect(()=>{
-    if (redirect){
-      router.push('/')
+    const fetchData = async() => {
+      const resp = await axios
+      .get("http://localhost:8080/api/recipes/" + searchParams.r)
+      const { name, ingredients, directions } = resp.data;
+      setName(name);
+      setIngredients(ingredients);
+      setDirections(directions);
     }
-  },[redirect])
+    fetchData();
+    
+  },[searchParams.r])
+  useEffect(() => {
+    if (redirect) {
+      router.push("/");
+    }
+  }, [redirect]);
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const recipeData = {
@@ -23,7 +39,6 @@ export default function Put() {
       ingredients: ingredients,
       directions: directions,
     };
-    console.log(recipeData);
     await axios
       .put("http://localhost:8080/api/recipes/" + name, {
         headers: { "Content-Type": "application/json" },
@@ -31,10 +46,9 @@ export default function Put() {
       })
       .then((res) => {
         setRedirect(true);
-        alert("Recipe Added Successfully!")
+        alert("Recipe Updated Successfully!");
       });
   }
-
 
   return (
     <div>
@@ -43,6 +57,7 @@ export default function Put() {
         <input
           type="text"
           placeholder="Recipe Name"
+          value={name}
           className="px-4 py-2 text-lg border border-gray-300 rounded mr-2"
           onChange={(e) => setName(e.target.value)}
         />
@@ -52,6 +67,7 @@ export default function Put() {
           placeholder="Ingredients"
           rows="5"
           cols="35"
+          value={ingredients}
           className="px-4 py-2 text-lg border border-gray-300 rounded mr-2"
           onChange={(e) => setIngredients(e.target.value)}
         />
@@ -61,6 +77,7 @@ export default function Put() {
           placeholder="Directions"
           rows="15"
           cols="35"
+          value={directions}
           className="px-4 py-2 text-lg border border-gray-300 rounded mr-2"
           onChange={(e) => setDirections(e.target.value)}
         />
@@ -68,7 +85,7 @@ export default function Put() {
         <button className="bg-[#ffbd88] text-white w-32 h-12 rounded-lg">
           Update
         </button>
-        </form>
+      </form>
     </div>
   );
 }
